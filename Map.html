@@ -1,0 +1,672 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+  <meta charset='utf-8' />
+  <title>Mapbox</title>
+  <meta name='viewport' content='initial-scale=1,maximum-scale=1,user-scalable=no' />
+  <script src='https://api.mapbox.com/mapbox-gl-js/v2.6.1/mapbox-gl.js'></script>
+  <link href='https://api.mapbox.com/mapbox-gl-js/v2.6.1/mapbox-gl.css' rel='stylesheet' />
+
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;700&display=swap">
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;700&display=swap" rel="stylesheet">
+
+
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+  <style>
+      body {
+          margin: 20px auto;
+          max-width: 1000px;
+      }
+
+      #map-container {
+          position: relative;
+          width: 65%;
+          height: 600px;
+          float: left;
+          border-top-left-radius: 8px;
+          border-bottom-left-radius: 8px;
+          overflow: hidden;
+          box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+      }
+
+      #map {
+          width: 100%;
+          height: 100%;
+      }
+
+      .container {
+          width: 30%;
+          float: left;
+          margin-left: 0%;
+          padding: 30px;
+          border-top-right-radius: 8px;
+          border-bottom-right-radius: 8px;
+          border: 1px solid #e2e8f0;
+          background: linear-gradient(to bottom, #ffffff, #f5f5f5);
+          box-shadow: inset 2px 0 5px -2px rgba(0, 0, 0, 0.1), 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+          height: 600px;
+      }
+
+      .input-box {
+          width: calc(100% - 16px);
+          margin-bottom: 10px;
+          padding: 12px;
+          border: none;
+          border-radius: 25px;
+          background-color: #f5f5f5;
+          box-shadow: inset 0 0 3px rgba(0, 0, 0, 0.1);
+      }
+
+      input.input-box[type="text"] {
+          width: 100%;
+          font-size: 14px;
+          color: #333;
+      }
+
+      select.input-box {
+          width: 100%;
+          appearance: none;
+          background-image: url('data:image/svg+xml;utf8,<svg fill="#000000" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24px" height="24px"><path d="M7 10l5 5 5-5H7z"/><path d="M0 0h24v24H0z" fill="none"/></svg>');
+          background-position: calc(100% - 12px) center;
+          background-repeat: no-repeat;
+          padding-right: 40px;
+      }
+
+      #stat-bar {
+          position: absolute;
+          top: 10px;
+          left: 50%;
+          transform: translateX(-50%);
+          width: 80%;
+          display: flex;
+          justify-content: space-between;
+              background-color: #32657e;
+              border-radius: 5px;
+          padding: 8px;
+          box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      }
+
+      .count-box {
+          flex: 1;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          flex-direction: column;
+          text-align: center;
+          margin: 0 5px;
+          height: auto;
+      }
+
+      .count-box strong {
+          display: block;
+          font-weight: bold;
+          color: #fff;
+          font-size: 10.5px;
+          margin-bottom: 3px;
+      }
+
+      .count-box .count-value {
+          display: block;
+          font-size: 16px;
+          color: #fff;
+          font-family: 'Montserrat', sans-serif;
+          font-weight: bold;
+          text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+      }
+
+      .count-box i {
+          font-size: 11px;
+          margin-bottom: 3px;
+          color: #0d366c;
+      }
+
+      .suggestions-container {
+          position: absolute;
+          max-height: 200px;
+          overflow-y: auto;
+          z-index: 1000;
+          background-color: white;
+          border: 1px solid #ccc;
+          border-top: none;
+          display: none;
+      }
+
+      .suggestion {
+          padding: 5px 10px;
+          cursor: pointer;
+      }
+
+      .suggestion:hover {
+          background-color: #f0f0f0;
+      }
+
+      #info {
+          font-size: 16px;
+          color: #2b6cb0;
+          margin-bottom: 20px;
+          border-bottom: 2px solid #2b6cb0;
+          padding-bottom: 8px;
+          font-family: 'Rubik', sans-serif;
+          letter-spacing: 1px;
+          text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.2);
+          transition: all 0.3s ease;
+      }
+
+      #info:hover {
+          transform: scale(1.05);
+          color: #1a4e8e;
+      }
+
+      #infocontainer {
+          margin-bottom: 50px;
+      }
+
+      .mapboxgl-popup-content {
+          font-family: 'Montserrat', sans-serif;
+          background-color: #1abc9c;
+          color: #ffffff;
+          font-size: 12px;
+          padding: 15px;
+          border-radius: 8px;
+          border: 2px solid #1abc9c;
+          box-shadow: 0 4px 8px rgba(0, 0, 0, 0.4);
+          max-width: 180px;
+          max-height: 150px;
+          transition: all 0.3s ease;
+          background-image: linear-gradient(to bottom right, #1abc9c, #66cc99);
+      }
+
+      .mapboxgl-popup-content:hover {
+          transform: translateY(-3px);
+          box-shadow: 0 6px 12px rgba(0, 0, 0, 0.6);
+          background-image: linear-gradient(to bottom right, #1abc9c, #66cc99);
+      }
+
+      .mapboxgl-popup-content h2 {
+          font-family: 'Montserrat', sans-serif;
+          color: #ffffff;
+          font-size: 14px;
+          margin-bottom: 8px;
+      }
+
+      .mapboxgl-popup-content p {
+          margin: 0;
+          line-height: 1.3;
+          font-size: 11px;
+      }
+
+      .context-info {
+          font-weight: bold;
+          text-transform: uppercase;
+          margin-bottom: 6px;
+      }
+
+      .context-info span {
+          color: #1abc9c;
+      }
+
+      .mapboxgl-popup-close-button {
+          background-color: #30c4a6;
+          color: #ffffff;
+          font-size: 16px;
+          border: 2px solid #30c4a6;
+          padding: 2px;
+          width: 21px;
+          height: 21px;
+          border-radius: 4px;
+          text-align: center;
+          line-height: 16px;
+          cursor: pointer;
+          transition: background-color 0.3s, color 0.3s;
+      }
+
+      .mapboxgl-popup-close-button:hover {
+          background-color: #1abc9c;
+      }
+  </style>
+  </head>
+  <body>
+
+  <div id="map-container">
+      <div id='map'></div>
+      <div id="stat-bar">
+          <div class="count-box">
+              <i class="fas fa-plane" style="color: white;"></i>
+              <strong>Travel Arrangements</strong>
+              <span class="count-value" id="total-travel-count"></span>
+          </div>
+          <div class="count-box">
+              <i class="fas fa-users" style="color: white;"></i>
+              <strong>Communities Served</strong>
+              <span class="count-value" id="communities"></span>
+          </div>
+          <div class="count-box">
+              <i class="fas fa-user" style="color: white;"></i>
+              <strong>Patient & Caregiver Trips</strong>
+              <span class="count-value" id="total-patient-count"></span>
+          </div>
+      </div>
+  </div>
+  <div class="container">
+      <div id="infocontainer">
+          <p id="info"><i class="fas fa-info-circle"></i> Fill in the fields below or zoom in to see the impact across Canada.</p>
+      </div>
+      <div class="mb-4">
+          <label for="community" class="block mb-2 text-lg font-semibold text-gray-800 flex items-center">
+              <i class="fas fa-search mr-2 text-green-500"></i>Find Your Community
+          </label>
+          <input type="text" id="select_community" class="input-box px-3 py-2 rounded-md border border-green-500 focus:outline-none focus:border-green-700" aria-label="Search by Community" placeholder="Enter community name...">
+          <div id="suggestions-container" class="suggestions-container"></div>
+      </div>
+
+      <div class="mb-4">
+          <label for="province" class="block mb-2 text-lg font-semibold text-gray-800 flex items-center">
+              <i class="fas fa-map-marker-alt mr-2 text-blue-500"></i>Search By Province
+          </label>
+          <select id="select_province" class="input-box px-3 py-2 rounded-md border border-green-500 focus:outline-none focus:border-green-700" aria-label="Search by Province" data-i18n-aria-label-key="aria-search-by-province" data-filter-by="region" onchange="zoomToProvince(this.value)">
+              <option value="reset">Please Select a Province</option>
+              <option value="Alberta" data-i18n-key="select-province-option-01">Alberta</option>
+              <option value="British Columbia" data-i18n-key="select-province-option-02">British Columbia</option>
+              <option value="Manitoba" data-i18n-key="select-province-option-03">Manitoba</option>
+              <option value="New Brunswick" data-i18n-key="select-province-option-04">New Brunswick</option>
+              <option value="New Foundland" data-i18n-key="select-province-option-05">Newfoundland and Labrador</option>
+              <option value="Nova Scotia" data-i18n-key="select-province-option-06">Nova Scotia</option>
+              <option value="Ontario" data-i18n-key="select-province-option-07">Ontario</option>
+              <option value="Prince Edward Island" data-i18n-key="select-province-option-08">Prince Edward Island</option>
+              <option value="Quebec" data-i18n-key="select-province-option-09">Quebec</option>
+              <option value="Saskatchewan" data-i18n-key="select-province-option-10">Saskatchewan</option>
+              <option value="Northwest Territories" data-i18n-key="select-province-option-11">Northwest Territories</option>
+              <option value="Nunavut" data-i18n-key="select-province-option-12">Nunavut</option>
+              <option value="Yukon" data-i18n-key="select-province-option-13">Yukon</option>
+          </select>
+      </div>
+
+      <button class="zoom-button input-box bg-gradient-to-r from-blue-400 to-blue-600 hover:from-blue-600 hover:to-blue-800 text-white font-bold py-2 px-6 rounded mb-4">
+          <i class="fas fa-globe-americas mr-2"></i>View All of Canada
+      </button>
+  </div>
+  <div class="footer">
+      <p class="text-center text-gray-600 text-sm"></p>
+  </div>
+
+
+  <script>
+      //ADD API KEY BELOW
+      mapboxgl.accessToken = 'pk.eyJ1IjoidGFsaGF3YXFxYXMxNCIsImEiOiJjbHR1OTYzY2QxOXQ1MmtxbW54emp5MmEyIn0.uqedpdIFm03mx95dihSJBw';
+
+      //ADD Username
+      var username = 'talhawaqqas14';
+
+      //ADD STYLE URL
+      var styleURL = 'mapbox://styles/talhawaqqas14/cluf0yaf000i401r5ajzhezjo';
+
+      //ADD Dataset ID
+      var datasetId = 'cluf24x8v0yyp1mlp2w4k9kce';
+
+
+      var map = new mapboxgl.Map({
+          container: 'map',
+          style: styleURL,
+          center: [-96, 60], // Center the map on desired coordinates
+          zoom: 2.4 // Adjust the zoom level as needed
+      });
+
+      // Add fullscreen control to top-right corner
+      var fullscreen = new mapboxgl.FullscreenControl();
+      map.addControl(fullscreen, 'top-right');
+      // Add navigation control to top-left corner
+      var nav = new mapboxgl.NavigationControl();
+      map.addControl(nav, 'bottom-left');
+
+
+      // Calculate total patient count, total travel count, and provincial counts
+      let totalPatientCount = 0;
+      let totalTravelCount = 0;
+      let totalCommunityCount = 0;
+      const provinceCounts = {};
+      const communitystats = {};
+
+
+      map.on('load', function () {
+          fetch('https://api.mapbox.com/datasets/v1/' + username + '/' + datasetId + '/features?access_token=' + mapboxgl.accessToken)
+              .then(response => response.json())
+              .then(data => {
+                  // Add source and layer
+                  map.addSource('my-dataset', {
+                      type: 'geojson',
+                      data: data
+                  });
+
+                  map.addLayer({
+                      id: 'icons',
+                      type: 'symbol',
+                      source: 'my-dataset',
+                      layout: {
+                          'icon-image': 'pin_4',
+                          'icon-size': [
+                              'interpolate',
+                              ['linear'],
+                              ['zoom'],
+                              0.99, 0.3,
+                              22, 1
+                          ],
+                          'icon-allow-overlap': true
+                      }
+                  });
+
+
+                  data.features.forEach(feature => {
+                      // Calculate total patient count and travel count
+                      totalPatientCount += parseInt(feature.properties["Patient Count"]) || 0;
+                      totalTravelCount += parseInt(feature.properties["Travel Count"]) || 0;
+                      totalCommunityCount++;
+                      // Calculate counts at the provincial level
+                      const province = feature.properties["Province"];
+                      if (province) {
+                          if (!provinceCounts[province]) {
+                              provinceCounts[province] = {
+                                  patientCount: 0,
+                                  travelCount: 0,
+                                  proCommunityCount: 0
+                              };
+                          }
+
+                          provinceCounts[province].patientCount += parseInt(feature.properties["Patient Count"]) || 0;
+                          provinceCounts[province].travelCount += parseInt(feature.properties["Travel Count"]) || 0;
+                          provinceCounts[province].proCommunityCount++;
+                      }
+
+
+                    // Calculate counts at the community level
+                    const title = feature.properties["Title"];
+                    if (title) {
+                        if (!communitystats[title]) {
+                            communitystats[title] = {
+                                patientCount: 0,
+                                travelCount: 0,
+                                proCommunityCount: 1, // Assuming the community count starts at 1
+
+                            };
+
+                          }
+                              communitystats[title].patientCount += parseInt(feature.properties["Patient Count"]) || 0;
+                              communitystats[title].travelCount += parseInt(feature.properties["Travel Count"]) || 0;
+                          }
+
+
+                  });
+
+
+
+                  // Function to update stat bar based on selected province
+                  function updateStatBar(selectedProvince) {
+                     if (selectedProvince=="reset"){resetFilterAndZoom();}
+
+                     else if (provinceCounts[selectedProvince]) {
+
+                          document.getElementById('total-travel-count').textContent = provinceCounts[selectedProvince].travelCount;
+                          document.getElementById('total-patient-count').textContent = provinceCounts[selectedProvince].patientCount;
+                          document.getElementById('communities').textContent = provinceCounts[selectedProvince].proCommunityCount;
+                      } else {
+                          document.getElementById('total-travel-count').textContent = 0;
+                          document.getElementById('total-patient-count').textContent = 0;
+                          document.getElementById('communities').textContent = 0;
+
+
+                      }
+                  }
+
+                  // Function to handle province selection change
+                  function provinceSelectionChanged() {
+                      var selectedProvince = document.getElementById('select_province').value;
+                      if (selectedProvince !== "") {
+                          updateStatBar(selectedProvince);
+
+
+                      } else {
+
+                          document.getElementById('total-travel-count').textContent = totalTravelCount;
+                          document.getElementById('total-patient-count').textContent = totalPatientCount;
+                          document.getElementById('communities').textContent = totalCommunityCount;
+                      }
+                  }
+
+                  // Attach event listener to the select element
+                  document.getElementById('select_province').addEventListener('change', provinceSelectionChanged);
+
+                  // Initial update of the stat bar based on the selected province
+                  provinceSelectionChanged();
+                  
+
+                  map.on('click', 'icons', function (e) {
+                     openpopup(e) ;
+                  });
+
+
+
+
+
+                function openpopup(e){
+
+                  var coordinates = e.features[0].geometry.coordinates.slice();
+                  var properties = e.features[0].properties;
+                  var title = properties.Title;
+                  var patientCount = properties['Patient Count'];
+                  var travelCount = properties['Travel Count'];
+
+
+                  var description = `
+                      <div style="text-align: center;">
+
+                          <h2>${title}</h2>
+                          <p><strong>Patient & Caregiver Trips: </br>${patientCount}</strong></p>
+                          <p><strong>Travel Arrangements:</br><strong> ${travelCount}</strong></p>
+                      </div>
+                  `;
+
+                  new mapboxgl.Popup()
+                      .setLngLat(coordinates)
+                      .setHTML(description)
+                      .addTo(map);
+
+                }
+
+
+                  // Change cursor style when hovering over icons
+                  map.on('mouseenter', 'icons', function () {
+                      map.getCanvas().style.cursor = 'pointer';
+                  });
+
+                  // Reset cursor style when leaving icons
+                  map.on('mouseleave', 'icons', function () {
+                      map.getCanvas().style.cursor = '';
+                  });
+              })
+              .catch(error => {
+                  console.error('Error fetching dataset:', error);
+              });
+      });
+
+
+      document.addEventListener('DOMContentLoaded', function () {
+        const selectProvince = document.getElementById('select_province');
+        const selectCommunity = document.getElementById('select_community');
+        const wholeCanadaButton = document.querySelector('.zoom-button');
+
+        // Event listener for province selection
+        selectProvince.addEventListener('change', function () {
+            // Clear community selection
+            selectCommunity.value = '';
+            // Reset community stats
+            updateStatBar('reset');
+        });
+
+        // Event listener for community input
+        selectCommunity.addEventListener('input', function () {
+            // Clear province selection
+            selectProvince.value = 'reset';
+            // Reset province stats
+            updateStatBar('reset');
+        });
+
+        // Event listener for "View Whole Canada" button
+        wholeCanadaButton.addEventListener('click', function () {
+            // Clear both province and community selections
+            selectProvince.value = 'reset';
+            selectCommunity.value = '';
+            // Reset stats
+            updateStatBar('reset');
+        });
+    });
+
+
+      // Function to zoom to the selected province
+      function zoomToProvince(province) {
+          var provinceCoordinates = getProvinceCoordinates(province);
+          if (provinceCoordinates) {
+              map.fitBounds(provinceCoordinates, { padding: 50 });
+              map.setFilter('icons', ['==', 'Province', province]);
+          }
+      }
+
+
+
+   function resetFilterAndZoom() {
+          // Zoom out to view the entire Canada map
+          map.fitBounds([
+              [-141, 41],
+              [-52, 74]
+          ]);
+          // Update stat bar with total values
+          document.getElementById('total-travel-count').textContent = totalTravelCount;
+          document.getElementById('total-patient-count').textContent = totalPatientCount;
+          document.getElementById('communities').textContent = totalCommunityCount;
+
+
+          map.setFilter('icons', null);
+
+      }
+
+
+      // Function to get the coordinates of the selected province
+      function getProvinceCoordinates(province) {
+          switch (province) {
+
+
+              case 'Alberta':
+                  return [[-120, 49], [-110, 60]];
+              case 'British Columbia':
+                  return [[-139, 48], [-114, 60]];
+              case 'Manitoba':
+                  return [[-103, 49], [-88, 60]];
+              case 'New Brunswick':
+                  return [[-68, 44], [-64, 48]];
+              case 'New Foundland':
+                  return [[-65, 46], [-52, 61]];
+              case 'Nova Scotia':
+                  return [[-67, 43], [-59, 48]];
+              case 'Ontario':
+                  return [[-95, 41], [-74, 56]];
+              case 'Prince Edward Island':
+                  return [[-64, 45], [-62, 47]];
+              case 'Quebec':
+                  return [[-80, 45], [-57, 51]];
+              case 'Saskatchewan':
+                  return [[-110, 49], [-101, 60]];
+              case 'Northwest Territories':
+                  return [[-136, 59], [-102, 70]];
+              case 'Nunavut':
+                  return [[-115, 54], [-70, 83]];
+              case 'Yukon':
+                  return [[-140, 59], [-126, 71]];
+              case 'reset':
+                  break;
+              default:
+                  return null;
+          }
+      }
+
+      const inputBox = document.getElementById('select_community');
+      const suggestionsContainer = document.getElementById('suggestions-container');
+
+      // Function to handle suggestions based on user input
+      function handleInput() {
+          const inputValue = inputBox.value.trim();
+          if (inputValue.length === 0) {
+              suggestionsContainer.innerHTML = '';
+              suggestionsContainer.style.display = 'none';
+              return;
+          }
+
+          // Fetch suggestions from Mapbox Geocoding API
+          fetch('https://api.mapbox.com/geocoding/v5/mapbox.places/' + encodeURIComponent(inputValue) + '.json?types=place&country=CA&access_token=' + mapboxgl.accessToken)
+              .then(response => response.json())
+              .then(data => {
+                  // Display suggestions to the user
+                  suggestionsContainer.innerHTML = '';
+                  data.features.forEach(feature => {
+                      const suggestion = document.createElement('div');
+                      suggestion.textContent = feature.place_name;
+                      suggestion.classList.add('suggestion');
+                      suggestion.addEventListener('click', () => {
+                          map.setFilter('icons', null);
+                          zoomToPlace(feature.center);
+
+                          // Update stat bar with data for selected community
+
+                          suggestionsContainer.style.display = 'none'; // Hide suggestions after selection
+                          updateStatBar(feature.text);
+
+                      });
+                      suggestionsContainer.appendChild(suggestion);
+                  });
+
+                  // Adjust suggestion box width to match input box width
+                  suggestionsContainer.style.width = inputBox.offsetWidth + 'px';
+
+                  suggestionsContainer.style.display = 'block'; // Show suggestions
+              })
+              .catch(error => {
+                  console.error('Error fetching suggestions:', error);
+              });
+      }
+      document.addEventListener('click', function(event) {
+    // Check if the clicked element is not a suggestion or the input box
+    if (!event.target.classList.contains('suggestion') && event.target !== inputBox) {
+        suggestionsContainer.style.display = 'none'; // Hide suggestions
+    }
+});
+      // Function to update stat bar based on selected community
+      function updateStatBar(selectedCommunity) {
+          document.getElementById('total-travel-count').textContent = communitystats[selectedCommunity].travelCount;
+          document.getElementById('total-patient-count').textContent = communitystats[selectedCommunity].patientCount;
+          document.getElementById('communities').textContent = communitystats[selectedCommunity].proCommunityCount ;
+      }
+
+      // Function to zoom to the selected place
+      function zoomToPlace(coordinates) {
+          map.flyTo({ center: coordinates, zoom: 12 });
+      }
+
+      // Add input event listener to trigger handleInput function
+      inputBox.addEventListener('input', handleInput);
+
+
+
+      // Add event listener to the zoom button
+      document.addEventListener("DOMContentLoaded", function () {
+          const button = document.querySelector(".zoom-button");
+          button.addEventListener("click", function () {
+              resetFilterAndZoom();
+          });
+      });
+
+  </script>
+
+
+
+
+
+</body>
+</html>
